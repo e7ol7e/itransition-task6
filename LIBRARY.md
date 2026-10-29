@@ -6,7 +6,7 @@ Version 1 · PostgreSQL 18 · English/USA (`en_US`) and German/Germany (`de_DE`)
 
 ## Quick start
 
-All generation routines are **stored procedures**, created with `create procedure`, and invoked with `call`. Python performs no name, address, coordinate, physical-attribute, phone, or email generation. It binds request parameters, reads the returned JSON, and renders Jinja templates. JavaScript handles interaction and projects existing coordinates onto the globe.
+All generation routines are **stored procedures**, created with `create procedure`, and invoked with `call`. Python performs no name, address, coordinate, physical-attribute, phone, or email generation. It binds request parameters, reads the returned JSON, and renders HTML with FastHTML. JavaScript handles interaction and projects existing coordinates onto the globe.
 
 ```sql
 -- OUT arguments are supplied as null in a top-level CALL.
@@ -121,7 +121,7 @@ The following procedures share dictionary/model and locale/seed/position inputs.
 call nominal.full_name(d,'en_US','42',0,n);
 ```
 
-Selects a first-name category, first name, surname, and optional second given name. Eight equiprobable format branches include plain names, full middle names, a middle initial, `Dr.`, locale-sensitive `Mr./Ms.` or `Herr/Frau`, and US `Jr.`. Some branches intentionally result in plain names. Output: `{first, last, full}`. Category selection is a formatting choice, not a claim about gender identity.
+Selects a first-name category, first name, surname, and optional second given name. Eight equiprobable format branches include plain names, full middle names, a middle initial, `Dr.`, locale-sensitive `Mr./Ms.` or `Herr/Frau`, and US `Jr.`. Some branches produce plain names. Output: `{first, last, full}`.
 
 ### Word
 
@@ -133,7 +133,7 @@ call nominal.word(d,m,'de_DE','42',0,w);
 
 An **order-2 character Markov chain**, trained in PostgreSQL from locale-specific street-word corpora. Start with `^^`; the last two characters determine a weighted distribution of the next character. `$` ends a word. Every step gets its own counter stream. Up to 18 steps and four attempts; accept lengths 4–14, otherwise pick a corpus word as a deterministic fallback. Title-case the output. German characters remain intact.
 
-The result resembles the locale's spelling but is invented, and can occasionally be an odd or existing word. This is statistical word construction, not a language model and not a guarantee of grammatical text. The UI does not claim postal deliverability.
+The generated word follows character-transition frequencies from the locale corpus. It can coincide with an existing word. Street names and addresses are synthetic.
 
 ### Address
 
@@ -156,7 +156,7 @@ call nominal.coordinates('en_US','42',0,null);
 
 Draw independent `u,v` uniformly in (0,1). Set `z=2u-1`, `latitude=degrees(asin(z))`, and `longitude=360v-180`. On a sphere, surface area is proportional to `d(longitude) * d(sin(latitude))`, so these samples are **uniform by area**. Uniform latitude would incorrectly concentrate points at the poles.
 
-Output: `{latitude, longitude}` in degrees. Coordinates are **global and independent of the postal address**. Restricting coordinates to the country would violate the whole-sphere requirement. The globe displays a sample; equal-area statistical tests use many draws, not a ten-point picture.
+Output: `{latitude, longitude}` in degrees. Coordinates are **global and independent of the postal address**. Restricting coordinates to the country would violate the whole-sphere requirement. The globe displays the current batch; equal-area tests use 20,000 draws.
 
 ### Physical
 
@@ -166,7 +166,7 @@ Output: `{latitude, longitude}` in degrees. Coordinates are **global and indepen
 call nominal.physical(d,'en_US','42',0,p);
 ```
 
-Height: Normal(172 cm, 9 cm); weight: Normal(75 kg, 12 kg). Rejection sampling enforces height 110–230 and weight 35–180, making these **truncated normals**, rounded to one decimal. The lower weight boundary changes the mean slightly. At most 100 attempts per attribute; exhaustion is effectively negligible at these bounds. Eye color is a uniform discrete choice of five localized labels. Height and weight are independent illustrative distributions, not a demographic or medical model.
+Height: Normal(172 cm, 9 cm); weight: Normal(75 kg, 12 kg). Rejection sampling enforces height 110–230 and weight 35–180, making these **truncated normals**, rounded to one decimal. The lower weight boundary changes the mean slightly. At most 100 attempts per attribute; exhaustion raises an exception. Eye color is a uniform discrete choice of five localized labels. Height and weight are sampled independently.
 
 ### Phone
 
@@ -236,7 +236,7 @@ call nominal.rebuild_locale('de_DE');
 
 Builds order-2 transition counts from lowercase corpus words with start/end sentinels, computes weighted cumulative distributions, and snapshots dictionary arrays in ordinal order. Existing snapshot is replaced. Run once at initialization or during an intentional versioned dictionary update. **Changing dictionaries or algorithms can change deterministic output.** Preserve the v1 CSV files and procedures to reproduce v1; release future changes under a new library version/schema.
 
-To add a locale: insert one metadata row and matching names/terms/cities, extend locale-specific name/address/phone formatting where needed, rebuild its assets, and expose it in the app's locale allowlist. A new country needs formatting rules; inserting names alone does not magically implement its postal/phone conventions. Shared lookup tables stay shared.
+To add a locale: insert one metadata row and matching names/terms/cities, extend locale-specific name/address/phone formatting where needed, rebuild its assets, and expose it in the app's locale allowlist. Each new locale needs address and phone formatting rules as well as dictionary entries; the lookup tables remain shared.
 
 ## Benchmark
 

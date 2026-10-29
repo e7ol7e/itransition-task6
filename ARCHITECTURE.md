@@ -59,7 +59,10 @@ errors to `#error`, preserving the last valid batch. Network failures also show
 feedback. `allowEval` and executable fragment scripts are disabled. No custom
 JavaScript lives inside Python strings or HTML event attributes.
 
-All executable assets use content-hashed query versions. HTML uses
+Stylesheets and executable assets use content-hashed query versions and long-lived
+immutable caching. Fonts use fingerprinted filenames; the three primary Latin fonts
+are preloaded. Font definitions load before the page stylesheet and use a short
+font-display block period to avoid showing the fallback face during a cold load. HTML uses
 `Cache-Control: no-store, no-transform`, preventing stale pages and Cloudflare email
 rewriting. FastHTML escapes content/attributes. Inert JSON escapes `<`, `>` and `&`
 to prevent closing a script element via a malicious seed. Trusted checked-in
@@ -78,6 +81,7 @@ On narrow screens, secondary table columns move into the complete contact dossie
 - `test_library.py`: real PostgreSQL integration and distribution tests.
 - `test_web.py`: FastHTML validation, error preservation, state/URL agreement,
   injection escaping, local versioned assets and document routes.
+- `verify_fonts.py`: cached-font reuse and stable headings across page navigation.
 - `verify_browser.py`: real Chrome checks against `TASK6_URL` (defaults to the
   public service); tests both themes, pagination, the millionth contact, dossiers,
   arbitrary seeds, failures, exports and responsive layouts.

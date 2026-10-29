@@ -1,7 +1,7 @@
 {
   "passed": true,
+  "python_version": "3.15.0",
   "check": "Fresh SQL schema, CSV COPY and SQL Markov training reproduce live 25-contact batches for both locales",
   "temporary_database_removed": true,
-  "elapsed_seconds": 4.351,
-  "python_version": "3.15.0"
+  "elapsed_seconds": 4.193
 }

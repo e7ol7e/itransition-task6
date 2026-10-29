@@ -33,7 +33,7 @@ Browser → FastHTML → CALL nominal.batch(locale, seed, batch, size, NULL)
                            └─ email
 ```
 
-There are 15 real PostgreSQL procedures (`prokind = 'p'`), no SQL generation functions or Python contact generators. Built-in SQL functions are used inside the procedures. `build_lookups.py` only extracts static dictionary constants from the MIT-licensed Faker development package; it never calls Faker's contact generation methods.
+There are 15 PostgreSQL stored procedures (`prokind = 'p'`), no SQL generation functions or Python contact generators. Built-in SQL functions are used inside the procedures. `build_lookups.py` only extracts static dictionary constants from the MIT-licensed Faker development package; it never calls Faker's contact generation methods.
 
 ## Run with Docker
 
@@ -78,6 +78,7 @@ Set `DATABASE_URL` for the application role and `ADMIN_URL` for an administrativ
 uv run python -m unittest -v test_library
 uv run python -m unittest -v test_web
 uv run python verify_browser.py
+uv run python verify_fonts.py
 uv run python verify_install.py
 ```
 
