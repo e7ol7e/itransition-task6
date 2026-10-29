@@ -37,7 +37,7 @@ There are 15 real PostgreSQL procedures (`prokind = 'p'`), no SQL generation fun
 
 ## Run with Docker
 
-Requirements: Docker Compose and Python 3.12+ for the dependency-free administrative setup script. The app image uses Python 3.13 and PostgreSQL 18.
+Requirements: Docker Compose and Python 3.15 for local development and administrative setup. The app image uses Python 3.15 and PostgreSQL 18.
 
 1. Create a private `.env` in this directory (do not commit it):
 
