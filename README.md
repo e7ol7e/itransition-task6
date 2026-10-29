@@ -8,6 +8,8 @@ A Python web application backed by a small Faker-style **PostgreSQL stored-proce
 - **Silent demonstration:** https://task6.evgeniy.win/submission/demo.mp4
 - **Author:** Evgeniy Bebeshko
 
+Measured result: **365.19 complete users/second** across 600,000 contacts, with three 100,000-contact trials per locale. US English: 409.79/s; German: 329.34/s. Includes SQL generation, JSON serialization, and checksumming; excludes network and rendering. [Raw results](artifacts/benchmark.json).
+
 ## Features
 
 - English/USA and German/Germany; names, addresses, fictional phones, reserved-domain emails.

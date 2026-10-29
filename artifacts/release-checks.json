@@ -1,0 +1,44 @@
+{
+  "checked_at": "2026-10-29T01:22:25.616961+00:00",
+  "passed": 9,
+  "checks": [
+    {
+      "url": "https://task6.evgeniy.win/",
+      "status": 200
+    },
+    {
+      "url": "https://task6.evgeniy.win/library",
+      "status": 200
+    },
+    {
+      "url": "https://task6.evgeniy.win/benchmark",
+      "status": 200
+    },
+    {
+      "url": "https://task6.evgeniy.win/api/benchmark",
+      "status": 200
+    },
+    {
+      "url": "https://task6.evgeniy.win/submission/submission.txt",
+      "status": 200
+    },
+    {
+      "url": "https://task6.evgeniy.win/submission/demo.mp4",
+      "status": 200,
+      "range_status": 206,
+      "sha256_verified": true
+    },
+    {
+      "url": "https://task4.evgeniy.win/",
+      "status": 200
+    },
+    {
+      "url": "https://task5.evgeniy.win/",
+      "status": 200
+    },
+    {
+      "url": "https://github.com/e7ol7e/itransition-task6",
+      "status": 200
+    }
+  ]
+}
