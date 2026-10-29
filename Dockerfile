@@ -1,8 +1,8 @@
 FROM python:3.15-slim
-COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /usr/local/bin/uv
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-cache
+RUN --mount=from=ghcr.io/astral-sh/uv:0.12.1,source=/uv,target=/usr/local/bin/uv \
+    uv sync --frozen --no-dev --no-cache
 COPY app.py services.py views.py LIBRARY.md ./
 COPY static ./static
 COPY artifacts ./artifacts
