@@ -1,0 +1,106 @@
+{
+  "checked_at": "2026-10-29T10:46:55.942484+00:00",
+  "target": "https://task6.evgeniy.win",
+  "axe_version": "4.14.0",
+  "scope": "Automated WCAG 2 A/AA and 2.1 AA rules; does not replace manual accessibility review.",
+  "passed": 16,
+  "total": 16,
+  "checks": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "route": "/",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "route": "/library",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "route": "/benchmark",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "route": "/api/docs",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "route": "/",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "route": "/library",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "route": "/benchmark",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "route": "/api/docs",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "route": "/",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "route": "/library",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "route": "/benchmark",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "route": "/api/docs",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "route": "/",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "route": "/library",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "route": "/benchmark",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "route": "/api/docs",
+      "violations": []
+    }
+  ]
+}

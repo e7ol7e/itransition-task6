@@ -1,10 +1,9 @@
 FROM python:3.13-slim
-COPY --from=ghcr.io/astral-sh/uv:0.9.5 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /usr/local/bin/uv
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-cache
-COPY app.py LIBRARY.md ./
-COPY templates ./templates
+COPY app.py services.py views.py LIBRARY.md ./
 COPY static ./static
 COPY artifacts ./artifacts
 RUN useradd --uid 10001 --create-home nominal

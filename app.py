@@ -1,227 +1,176 @@
-"""Python renders HTML and reads SQL procedure results. No contact generation."""
+"""FastHTML routes: Python owns data, validation and rendered fragments."""
 
-import csv
-import io
 import json
-import os
-import time
-from contextlib import asynccontextmanager
+import secrets
 from pathlib import Path
 
 import markdown
-from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from psycopg_pool import AsyncConnectionPool
+from fasthtml.common import FastHTML, HttpHeader, Link, Meta, Script
+from starlette.exceptions import HTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, JSONResponse
+from starlette.staticfiles import StaticFiles
+
+import services
+import views
 
 ROOT = Path(__file__).resolve().parent
-pool = AsyncConnectionPool(
-    os.environ["DATABASE_URL"],
-    min_size=1,
-    max_size=4,
-    open=False,
-    kwargs={
-        "autocommit": True,
-        "options": "-c statement_timeout=8000 -c default_transaction_read_only=on",
-    },
-)
 
 
-@asynccontextmanager
-async def lifespan(app):
-    await pool.open(wait=True)
-    yield
-    await pool.close()
+class ResponsePolicy(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store, no-transform"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
 
 
-app = FastAPI(
-    title="Nominal SQL contact library",
-    lifespan=lifespan,
-    docs_url="/api/docs",
-    redoc_url=None,
-)
-app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
-templates = Jinja2Templates(directory=ROOT / "templates")
-
-
-@app.middleware("http")
-async def response_policy(request, call_next):
-    response = await call_next(request)
-    # Cloudflare's HTML email obfuscator breaks dynamically inserted fragments.
-    # These emails are deliberately fictional, and must survive byte-for-byte.
-    response.headers["Cache-Control"] = "no-store, no-transform"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    return response
-
-
-async def batch(locale, seed, page, size):
-    if (
-        locale not in ("en_US", "de_DE")
-        or len(seed) > 64
-        or page < 0
-        or page > 100000000
-        or size not in (10, 25, 50)
-    ):
-        raise HTTPException(
-            422,
-            "Choose a supported locale, a seed of up to 64 characters, and a valid batch.",
+async def http_error(request, exc):
+    if request.url.path.startswith("/api/") or request.url.path == "/healthz":
+        return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+    if request.headers.get("hx-request") == "true":
+        return HTMLResponse(
+            views.render_error(exc.detail),
+            status_code=exc.status_code,
+            headers={"HX-Retarget": "#error", "HX-Reswap": "innerHTML"},
         )
-    start = time.perf_counter()
+    return HTMLResponse(views.render_error(exc.detail), status_code=exc.status_code)
+
+
+app = FastHTML(
+    title="Nominal — The identity atelier",
+    lifespan=services.lifespan,
+    htmlkw={"lang": "en"},
+    htmx=False,
+    surreal=False,
+    default_hdrs=False,
+    sess_cls=None,
+    secret_key=secrets.token_urlsafe(32),
+    exception_handlers={HTTPException: http_error},
+    hdrs=[
+        Meta(charset="utf-8"),
+        Meta(name="viewport", content="width=device-width, initial-scale=1"),
+        Meta(
+            name="description",
+            content="Fictional people. Real SQL. Explore reproducible synthetic identities generated entirely by PostgreSQL.",
+        ),
+        Meta(name="color-scheme", content="dark light"),
+        Meta(
+            name="htmx-config",
+            content=json.dumps(
+                {"metaCharacter": "-", "allowEval": False, "allowScriptTags": False}
+            ),
+        ),
+        Link(rel="icon", href="/static/favicon.svg", type="image/svg+xml"),
+        Script(src=views.asset("js/theme.js")),
+        Link(rel="stylesheet", href=views.asset("style.css")),
+        Script(src=views.asset("vendor/htmx-4.0.0.min.js"), defer=True),
+        Script(src=views.asset("js/browser.js"), defer=True),
+        Script(src=views.asset("js/globe.js"), defer=True),
+    ],
+)
+app.add_middleware(ResponsePolicy)
+app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+
+
+def parameters(request):
+    q = request.query_params
     try:
-        async with pool.connection() as conn:
-            cursor = await conn.execute(
-                "call nominal.batch(%s,%s,%s,%s,null)", (locale, seed, page, size)
-            )
-            result = (await cursor.fetchone())[0]
-    except Exception as exc:
-        # Do not return credentials, SQL internals, or connection details.
-        import logging
-
-        logging.getLogger("nominal").exception("Batch request failed")
+        page = int(q.get("page", "0"))
+        if "batch_number" in q:
+            page = int(q["batch_number"]) - 1
+        return (
+            q.get("locale", "en_US"),
+            q.get("seed", "42"),
+            page,
+            int(q.get("size", "10")),
+        )
+    except ValueError as exc:
         raise HTTPException(
-            503, "Generation is temporarily unavailable. Please try again."
+            422, "Batch number and batch size must be whole numbers."
         ) from exc
-    result["elapsed_ms"] = round((time.perf_counter() - start) * 1000, 1)
-    return result
 
 
-@app.get("/", response_class=HTMLResponse)
-async def home(
-    request: Request,
-    locale: str = "en_US",
-    seed: str = "42",
-    page: int = 0,
-    size: int = 10,
-):
-    data = await batch(locale, seed, page, size)
-    return templates.TemplateResponse(
-        request=request, name="index.html", context={"data": data, "section": "lab"}
+@app.get("/")
+async def home(request: Request):
+    return views.layout(
+        views.generator(await services.batch(*parameters(request))), "lab"
     )
+
+
+@app.get("/fragment")
+async def fragment(request: Request):
+    data = await services.batch(*parameters(request))
+    return views.results(data), HttpHeader("HX-Replace-Url", views.url("/", data))
+
+
+@app.get("/contact")
+async def contact(request: Request):
+    args = parameters(request)
+    try:
+        index = int(request.query_params.get("index", "0"))
+    except ValueError as exc:
+        raise HTTPException(422, "Contact index must be a whole number.") from exc
+    if index < 0 or index >= args[3]:
+        raise HTTPException(422, "Choose a contact within this batch.")
+    data = await services.batch(*args)
+    content = views.contact_detail(data["contacts"][index], data)
+    if request.headers.get("hx-request") == "true":
+        return content
+    return views.layout(views.detail_page(content), "lab", "Contact dossier")
 
 
 @app.get("/api/contacts")
-async def contacts(
-    locale: str = "en_US",
-    seed: str = Query("42", max_length=64),
-    page: int = Query(0, ge=0, le=100000000),
-    size: int = 10,
-):
-    return await batch(locale, seed, page, size)
-
-
-@app.get("/fragment", response_class=HTMLResponse, include_in_schema=False)
-async def fragment(
-    request: Request,
-    locale: str = "en_US",
-    seed: str = "42",
-    page: int = 0,
-    size: int = 10,
-):
-    data = await batch(locale, seed, page, size)
-    return templates.TemplateResponse(
-        request=request, name="results.html", context={"data": data}
-    )
+async def contacts(request: Request):
+    return JSONResponse(await services.batch(*parameters(request)))
 
 
 @app.get("/download")
-async def download(
-    locale: str = "en_US",
-    seed: str = "42",
-    page: int = 0,
-    size: int = 10,
-    format: str = "csv",
-):
-    data = await batch(locale, seed, page, size)
-    headers = {
-        "Content-Disposition": f'attachment; filename="nominal-{locale}-batch-{page + 1}.{format if format in ("json", "csv") else "csv"}"',
-        "X-Content-Type-Options": "nosniff",
-    }
-    if format == "json":
-        return Response(
-            json.dumps(data, ensure_ascii=False, indent=2),
-            media_type="application/json",
-            headers=headers,
-        )
-    output = io.StringIO(newline="")
-    writer = csv.writer(output)
-    writer.writerow(
-        [
-            "position",
-            "locale",
-            "full_name",
-            "address",
-            "phone",
-            "email",
-            "latitude",
-            "longitude",
-            "height_cm",
-            "weight_kg",
-            "eye_color",
-        ]
-    )
-    for c in data["contacts"]:
-        writer.writerow(
-            [
-                c["position"],
-                c["locale"],
-                c["name"]["full"],
-                c["address"]["full"],
-                c["phone"],
-                c["email"],
-                c["coordinates"]["latitude"],
-                c["coordinates"]["longitude"],
-                c["physical"]["height_cm"],
-                c["physical"]["weight_kg"],
-                c["physical"]["eye_color"],
-            ]
-        )
-    return Response(
-        "\ufeff" + output.getvalue(),
-        media_type="text/csv; charset=utf-8",
-        headers=headers,
-    )
+async def download(request: Request):
+    format = request.query_params.get("format", "csv")
+    if format not in ("csv", "json"):
+        raise HTTPException(422, "Choose CSV or JSON export.")
+    return await services.export_batch(*parameters(request), format)
 
 
-@app.get("/library", response_class=HTMLResponse)
-async def library(request: Request):
+@app.get("/library")
+async def library():
     content = markdown.markdown(
         (ROOT / "LIBRARY.md").read_text(encoding="utf8"),
         extensions=["fenced_code", "tables", "toc"],
     )
-    return templates.TemplateResponse(
-        request=request,
-        name="document.html",
-        context={
-            "content": content,
-            "section": "library",
-            "title": "A small Faker, entirely in SQL.",
-        },
-    )
+    return views.layout(views.library(content), "library", "The SQL library")
 
 
-@app.get("/benchmark", response_class=HTMLResponse)
-async def benchmark(request: Request):
+def measured_benchmark():
     path = ROOT / "artifacts/benchmark.json"
-    results = json.loads(path.read_text()) if path.exists() else None
-    return templates.TemplateResponse(
-        request=request,
-        name="benchmark.html",
-        context={"results": results, "section": "benchmark"},
+    return json.loads(path.read_text()) if path.exists() else None
+
+
+@app.get("/benchmark")
+async def benchmark():
+    return views.layout(
+        views.benchmark(measured_benchmark()), "benchmark", "Measured performance"
     )
 
 
-@app.get("/api/benchmark", include_in_schema=False)
+@app.get("/api/benchmark")
 async def benchmark_json():
-    path = ROOT / "artifacts/benchmark.json"
-    if not path.exists():
+    result = measured_benchmark()
+    if result is None:
         raise HTTPException(404, "Benchmark not yet available")
-    return JSONResponse(json.loads(path.read_text()))
+    return JSONResponse(result)
 
 
-@app.get("/healthz", include_in_schema=False)
+@app.get("/api/docs")
+async def api_docs():
+    return views.layout(views.api_reference(), "library", "HTTP reference")
+
+
+@app.get("/healthz")
 async def health():
-    async with pool.connection() as conn:
+    async with services.pool.connection() as conn:
         await conn.execute("select 1")
-    return {"status": "ok"}
+    return JSONResponse({"status": "ok"})

@@ -1,12 +1,13 @@
 {
   "file": "demo.mp4",
-  "duration_seconds": 148.933,
+  "duration_seconds": 156.967,
   "width": 1920,
   "height": 1080,
-  "frame_rate": "4468000/148933",
+  "frame_rate": "4709000/156967",
   "codec": "h264",
   "audio_streams": 0,
   "subtitles": false,
-  "bytes": 11377094,
-  "sha256": "be615999516156b8f1203906b9ce4f82dc616f37d7d8cd92df7e969feccebaae"
+  "bytes": 18063315,
+  "sha256": "d7c1805f20dd4779444621422e467c4ab93c32631e55a62e675bb12a0cdfafff",
+  "edition": "FastHTML 0.14.15 / HTMX 4.0.0; dark and light themes; actual Chrome window"
 }

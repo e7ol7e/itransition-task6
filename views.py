@@ -1,0 +1,764 @@
+"""FastHTML components. No contact data or HTML is constructed in JavaScript."""
+
+import hashlib
+import json
+from pathlib import Path
+from urllib.parse import urlencode
+
+from bs4 import BeautifulSoup
+from fasthtml.common import (
+    H1,
+    H2,
+    H3,
+    A,
+    Article,
+    Aside,
+    B,
+    Br,
+    Button,
+    Canvas,
+    Code,
+    Details,
+    Dialog,
+    Div,
+    Em,
+    Footer,
+    Form,
+    Header,
+    I,
+    Input,
+    Label,
+    Main,
+    Nav,
+    NotStr,
+    Option,
+    P,
+    Pre,
+    Script,
+    Section,
+    Select,
+    Small,
+    Span,
+    Strong,
+    Summary,
+    Table,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Title,
+    Tr,
+    to_xml,
+)
+
+ROOT = Path(__file__).resolve().parent
+
+
+def asset(path):
+    digest = hashlib.sha256((ROOT / "static" / path).read_bytes()).hexdigest()[:12]
+    return f"/static/{path}?v={digest}"
+
+
+def url(path, data, **extra):
+    params = {
+        "locale": data["locale"],
+        "seed": data["seed"],
+        "page": data["batch"],
+        "size": data["size"],
+    }
+    params.update(extra)
+    return path + "?" + urlencode(params)
+
+
+def safe_json(value):
+    # A JSON script element is raw text: HTML escaping is not JSON escaping.
+    return NotStr(
+        json.dumps(value, ensure_ascii=True)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+
+
+def eyebrow(text, number=None):
+    return P(
+        Span(number, cls="section-number") if number else None, text, cls="eyebrow"
+    )
+
+
+def layout(content, section, title="The identity atelier"):
+    nav = [
+        ("/", "Generator", "lab"),
+        ("/library", "SQL library", "library"),
+        ("/benchmark", "Benchmark", "benchmark"),
+    ]
+    return (
+        Title(f"Nominal — {title}"),
+        A("Skip to content", href="#main", cls="skip-link"),
+        Div(
+            Header(
+                A(
+                    Span("N", cls="brand-mark"),
+                    Span("NOMINAL", cls="wordmark"),
+                    href="/",
+                    aria_label="Nominal home",
+                    cls="brand",
+                ),
+                Nav(
+                    *[
+                        A(
+                            label,
+                            href=href,
+                            cls="active" if key == section else "",
+                            aria_current="page" if key == section else None,
+                        )
+                        for href, label, key in nav
+                    ],
+                    aria_label="Main",
+                ),
+                Div(
+                    Span(I(), "SQL ENGINE ONLINE", cls="engine"),
+                    Button(
+                        Span("◐", aria_hidden="true"),
+                        Span("Light mode", id="theme-label"),
+                        id="theme-toggle",
+                        type="button",
+                        aria_label="Switch to light mode",
+                        cls="theme-toggle",
+                    ),
+                    cls="header-tools",
+                ),
+                cls="topbar",
+            ),
+            content,
+            Footer(
+                Div(
+                    A("NOMINAL", href="/", cls="footer-brand"),
+                    Span("FICTIONAL PEOPLE. REAL SQL."),
+                ),
+                Div(
+                    Span("Task 06 · SQL contact lab"),
+                    A(
+                        "Source ↗",
+                        href="https://github.com/e7ol7e/itransition-task6",
+                        target="_blank",
+                        rel="noopener",
+                    ),
+                    A("HTTP reference ↗", href="/api/docs"),
+                ),
+                cls="footer",
+            ),
+            cls="shell",
+        ),
+        Dialog(
+            Button(
+                "×",
+                type="button",
+                cls="close-dialog",
+                aria_label="Close contact details",
+            ),
+            Div(id="detail-content"),
+            id="detail",
+            aria_labelledby="detail-title",
+        ),
+        Div(id="toast", role="status", aria_live="polite"),
+    )
+
+
+def generator(data):
+    return Main(
+        Section(
+            Div(
+                eyebrow("THE IDENTITY ATELIER", "N° 006"),
+                H1("A world of people.", Br(), Em("None of them real.")),
+                P(
+                    "Names. Places. A life in the details.",
+                    Br(),
+                    "Reproducible synthetic identities, crafted entirely in SQL.",
+                    cls="lede",
+                ),
+                cls="hero-copy",
+            ),
+            Div(
+                Div(
+                    Span("N", cls="seal-letter"),
+                    Span("SEED → IDENTITY", cls="seal-caption"),
+                    cls="identity-seal",
+                ),
+                P(
+                    "NO TWO STORIES ALIKE.",
+                    Br(),
+                    "THE SAME SEED, THE SAME STORY.",
+                    cls="mono",
+                ),
+                cls="hero-aside",
+            ),
+            cls="hero",
+        ),
+        Section(
+            Div(Span("01", cls="section-number"), H2("Set the story in motion.")),
+            Span("CHANGE THE SEED. MEET SOMEONE NEW.", cls="micro"),
+            cls="section-heading",
+        ),
+        Form(
+            Div(
+                Label(Span("01 / "), "Locale", fr="locale"),
+                Select(
+                    Option(
+                        "English / United States",
+                        value="en_US",
+                        selected=data["locale"] == "en_US",
+                    ),
+                    Option(
+                        "Deutsch / Deutschland",
+                        value="de_DE",
+                        selected=data["locale"] == "de_DE",
+                    ),
+                    id="locale",
+                    name="locale",
+                ),
+                cls="control",
+            ),
+            Div(
+                Label(Span("02 / "), "Seed", fr="seed"),
+                Div(
+                    Input(
+                        value=data["seed"],
+                        id="seed",
+                        name="seed",
+                        maxlength=64,
+                        autocomplete="off",
+                        spellcheck="false",
+                        aria_label="Seed",
+                    ),
+                    Button(
+                        "↻",
+                        type="button",
+                        id="shuffle",
+                        aria_label="Choose a new seed",
+                        title="Choose a new seed",
+                    ),
+                    cls="seed-wrap",
+                ),
+                cls="control",
+            ),
+            Div(
+                Label(Span("03 / "), "Batch size", fr="size"),
+                Select(
+                    *[
+                        Option(f"{s} people", value=str(s), selected=data["size"] == s)
+                        for s in (10, 25, 50)
+                    ],
+                    id="size",
+                    name="size",
+                ),
+                cls="control size-control",
+            ),
+            Input(type="hidden", name="page", value="0"),
+            Button(
+                Span("Generate identities", cls="button-label"),
+                Span("↗", cls="button-arrow"),
+                type="submit",
+                id="generate",
+                cls="primary",
+            ),
+            action="/",
+            method="get",
+            id="generator",
+            cls="controls",
+            hx_get="/fragment",
+            hx_trigger="submit, change from:#locale, change from:#size",
+            **fragment_attrs(),
+        ),
+        Div(id="error", role="alert", aria_live="polite"),
+        results(data),
+        Section(
+            eyebrow("NOT MAGIC. A METHOD.", "03"),
+            Div(
+                Article(
+                    Span("↺", cls="method-icon"),
+                    H3("A seed, not a session."),
+                    P(
+                        "Every position has its own deterministic stream. Return tomorrow, change the page size; the person stays the same."
+                    ),
+                ),
+                Article(
+                    Span("◎", cls="method-icon"),
+                    H3("The whole world. Equally."),
+                    P(
+                        "Coordinates sampled by surface area, not latitude. The poles get their fair share. Drag the globe and explore."
+                    ),
+                ),
+                Article(
+                    Span("∿", cls="method-icon"),
+                    H3("Variation with a reason."),
+                    P(
+                        "Markov chains invent street names. Box–Muller shapes physical attributes. Fifteen procedures make it happen."
+                    ),
+                ),
+            ),
+            cls="methods",
+        ),
+        id="main",
+    )
+
+
+def fragment_attrs():
+    return {
+        "hx_target": "#results",
+        "hx_swap": "outerHTML",
+        "hx_sync": "#generator:replace",
+        "hx_indicator": "#results",
+    }
+
+
+def contact_link(data, index, *children, **attrs):
+    href = url("/contact", data, index=index)
+    return A(
+        *children,
+        href=href,
+        hx_get=href,
+        hx_target="#detail-content",
+        hx_swap="innerHTML",
+        hx_sync="#detail-content:replace",
+        **attrs,
+    )
+
+
+def results(data):
+    people = data["contacts"]
+    rows = []
+    for i, c in enumerate(people):
+        address = c["address"]
+        city = (
+            f"{address['city']}, {address['region']} {address['postal_code']}"
+            if data["locale"] == "en_US"
+            else f"{address['postal_code']} {address['city']}"
+        )
+        rows.append(
+            Tr(
+                Td(f"{c['position'] + 1:04d}", cls="position"),
+                Td(
+                    Div(
+                        Span(
+                            c["name"]["first"][0] + c["name"]["last"][0],
+                            cls=f"avatar av{i % 4}",
+                            aria_hidden="true",
+                        ),
+                        Div(
+                            contact_link(
+                                data,
+                                i,
+                                c["name"]["full"],
+                                cls="person-name",
+                                aria_label=f"View {c['name']['full']}",
+                            ),
+                            Span(c["email"], cls="email"),
+                            Span(c["phone"], cls="phone"),
+                        ),
+                        cls="person",
+                    )
+                ),
+                Td(Span(address["street"]), Small(city), cls="address"),
+                Td(
+                    Span(
+                        f"{c['physical']['height_cm']} cm",
+                        B(" / "),
+                        f"{c['physical']['weight_kg']} kg",
+                    ),
+                    Small(f"{c['physical']['eye_color']} eyes"),
+                    cls="profile",
+                ),
+                Td(
+                    contact_link(
+                        data,
+                        i,
+                        "↗",
+                        cls="row-arrow",
+                        aria_label=f"Open dossier for {c['name']['full']}",
+                    )
+                ),
+                data_index=i,
+            )
+        )
+    export = Details(
+        Summary("Export batch ↓", id="export-toggle"),
+        Div(
+            A("CSV spreadsheet ↗", href=url("/download", data, format="csv")),
+            A("JSON data ↗", href=url("/download", data, format="json")),
+            id="exports",
+        ),
+        cls="export-menu",
+    )
+    pager = Div(
+        Span(
+            "Positions ",
+            Strong(f"{data['start'] + 1:,}–{data['start'] + data['size']:,}"),
+        ),
+        Div(
+            A(
+                "←",
+                href=url("/", data, page=max(0, data["batch"] - 1)),
+                hx_get=url("/fragment", data, page=max(0, data["batch"] - 1)),
+                id="previous",
+                aria_label="Previous batch",
+                aria_disabled="true" if data["batch"] == 0 else "false",
+                tabindex="-1" if data["batch"] == 0 else "0",
+                cls="page-button",
+                **fragment_attrs(),
+            ),
+            Form(
+                *[
+                    Input(type="hidden", name=k, value=data[k])
+                    for k in ("locale", "seed", "size")
+                ],
+                Label(
+                    "Batch ",
+                    Input(
+                        type="number",
+                        id="page-number",
+                        name="batch_number",
+                        min=1,
+                        max=100000001,
+                        value=data["batch"] + 1,
+                        aria_label="Batch number",
+                    ),
+                ),
+                Button("Go", type="submit", cls="jump-go"),
+                action="/",
+                method="get",
+                hx_get="/fragment",
+                hx_trigger="submit, change",
+                cls="jump",
+                **fragment_attrs(),
+            ),
+            A(
+                "→",
+                href=url("/", data, page=data["batch"] + 1),
+                hx_get=url("/fragment", data, page=data["batch"] + 1),
+                id="next",
+                aria_label="Next batch",
+                aria_disabled="true" if data["batch"] == 100000000 else "false",
+                tabindex="-1" if data["batch"] == 100000000 else "0",
+                cls="page-button",
+                **fragment_attrs(),
+            ),
+            cls="page-controls",
+        ),
+        cls="pagination",
+    )
+    return Div(
+        Script(safe_json(data), type="application/json", id="batch-data"),
+        Section(
+            Div(Span("02", cls="section-number"), H2("Meet the possibilities.")),
+            Span(f"{data['elapsed_ms']} MS · POSTGRESQL → YOU", cls="micro"),
+            cls="section-heading result-heading",
+        ),
+        Section(
+            Div(
+                Div(
+                    Div(
+                        Span("THE GENERATED BATCH", cls="eyebrow"),
+                        H3(
+                            "A few unfamiliar faces ",
+                            Span(f"{data['size']:02d}", cls="count-pill"),
+                        ),
+                    ),
+                    export,
+                    cls="panel-heading",
+                ),
+                Div(
+                    Table(
+                        Thead(
+                            Tr(
+                                *[
+                                    Th(h if h else Span("Details", cls="sr-only"))
+                                    for h in (
+                                        "N°",
+                                        "PERSON / CONTACT",
+                                        "POSTAL ADDRESS",
+                                        "PROFILE",
+                                        "",
+                                    )
+                                ]
+                            )
+                        ),
+                        Tbody(*rows),
+                        cls="contacts",
+                    ),
+                    cls="table-scroll",
+                ),
+                pager,
+                cls="contact-panel",
+            ),
+            Aside(
+                Div(
+                    Span("FIELD NOTES / GEOGRAPHY", cls="eyebrow"),
+                    I(cls="live-dot"),
+                    cls="globe-top",
+                ),
+                Div(
+                    Canvas(
+                        id="globe",
+                        aria_label="Interactive globe showing uniformly sampled coordinates",
+                        role="img",
+                    ),
+                    Span("UNIFORM ON THE SPHERE", cls="globe-coordinate"),
+                    cls="globe-wrap",
+                ),
+                Div(
+                    H3("Everywhere, equally."),
+                    P(
+                        "No borders. No bias toward the poles.",
+                        Br(),
+                        "Drag to explore the current batch.",
+                    ),
+                    Div(
+                        *[
+                            contact_link(
+                                data,
+                                i,
+                                Span(I(), c["name"]["first"]),
+                                Span(
+                                    f"{c['coordinates']['latitude']:+.2f}°, {c['coordinates']['longitude']:+.2f}°"
+                                ),
+                                data_point=i,
+                            )
+                            for i, c in enumerate(people[:3])
+                        ],
+                        cls="coordinate-list",
+                    ),
+                    P(
+                        "Global samples, independent of postal addresses.",
+                        cls="globe-note",
+                    ),
+                    cls="globe-caption",
+                ),
+                Div(
+                    Span("THE RECIPE", cls="eyebrow"),
+                    Code("call nominal.batch(…);"),
+                    A("Inside the SQL library ↗", href="/library#batch"),
+                    cls="sql-note",
+                ),
+                cls="globe-panel",
+            ),
+            cls="workspace",
+        ),
+        P(
+            Span(I(), "REPRODUCIBLE BY DESIGN"),
+            Span(
+                f"{data['locale']} · seed “{data['seed']}” · library v{data['version']}"
+            ),
+            cls="batch-foot",
+        ),
+        id="results",
+        aria_live="polite",
+        aria_label="Generated contacts",
+    )
+
+
+def contact_detail(c, data):
+    def field(label, value, wide=False):
+        return Div(Span(label, cls="eyebrow"), P(value), cls="wide" if wide else "")
+
+    return Div(
+        eyebrow(f"CONTACT {c['position'] + 1:04d} / {c['locale']}", "DOSSIER"),
+        Span(c["name"]["first"][0] + c["name"]["last"][0], cls="avatar detail-avatar"),
+        H2(c["name"]["full"], id="detail-title"),
+        P("A fictional person. Every detail, repeatable.", cls="lede"),
+        Div(
+            field("EMAIL", c["email"], True),
+            field("PHONE", c["phone"]),
+            field(
+                "PHYSICAL PROFILE",
+                f"{c['physical']['height_cm']} cm · {c['physical']['weight_kg']} kg · {c['physical']['eye_color']} eyes",
+            ),
+            field("POSTAL ADDRESS", c["address"]["full"], True),
+            field("LATITUDE", f"{c['coordinates']['latitude']:.6f}°"),
+            field("LONGITUDE", f"{c['coordinates']['longitude']:.6f}°"),
+            cls="detail-grid",
+        ),
+        Button(
+            "Copy contact as JSON ↗",
+            type="button",
+            cls="copy",
+            data_copy="contact-json",
+        ),
+        Script(safe_json(c), type="application/json", id="contact-json"),
+        P(
+            f"Seed “{data['seed']}” · position {c['position']} (zero-based) · library v{data['version']}",
+            Br(),
+            "Global coordinates are independent of the postal address.",
+            cls="detail-foot",
+        ),
+    )
+
+
+def detail_page(content):
+    return Main(
+        A("← Back to generator", href="/"), content, id="main", cls="standalone-detail"
+    )
+
+
+def library(content):
+    # Code examples and wide tables must also scroll from the keyboard on mobile.
+    document = BeautifulSoup(content, "html.parser")
+    for element in document.select("pre, table"):
+        element["tabindex"] = "0"
+    return Main(
+        Section(
+            eyebrow("THE SQL LIBRARY", "REFERENCE"),
+            H1("A small Faker.", Br(), Em("Entirely in SQL.")),
+            P("Fifteen stored procedures. One reproducible world.", cls="lede"),
+            cls="doc-hero",
+        ),
+        Div(NotStr(str(document)), cls="doc-body"),
+        id="main",
+        cls="docs",
+    )
+
+
+def benchmark(results):
+    intro = Section(
+        eyebrow("MEASURED, NOT ESTIMATED", "PERFORMANCE"),
+        H1("How fast is", Br(), Em("a fictional person?")),
+        P(
+            "Real procedure calls. Every field generated. Every contact hashed.",
+            cls="lede",
+        ),
+        cls="doc-hero",
+    )
+    if not results:
+        return Main(
+            intro, P("The measured benchmark is being prepared."), id="main", cls="docs"
+        )
+
+    def metric(label, value, note):
+        return Div(Span(label, cls="eyebrow"), Strong(value), Small(note))
+
+    return Main(
+        intro,
+        Div(
+            metric(
+                "COMBINED THROUGHPUT",
+                f"{results['overall_users_per_second']:,.2f}",
+                "users / second · SQL generation",
+            ),
+            metric(
+                "CONTACTS GENERATED",
+                f"{results['total_contacts']:,}",
+                f"across {len(results['runs'])} measured runs",
+            ),
+            metric(
+                "SQL-ONLY GENERATION", "100%", "no Python Faker · no skipped fields"
+            ),
+            cls="benchmark-cards",
+        ),
+        Div(
+            H2("Every measured run"),
+            Div(
+                Table(
+                    Thead(
+                        Tr(
+                            *[
+                                Th(s)
+                                for s in (
+                                    "Locale",
+                                    "Contacts",
+                                    "SQL time",
+                                    "Users / sec",
+                                    "Client time",
+                                )
+                            ]
+                        )
+                    ),
+                    Tbody(
+                        *[
+                            Tr(
+                                Td(r["locale"]),
+                                Td(f"{r['count']:,}"),
+                                Td(f"{r['seconds']:.2f} s"),
+                                Td(f"{r['users_per_second']:,.2f}"),
+                                Td(f"{r['client_seconds']:.2f} s"),
+                            )
+                            for r in results["runs"]
+                        ]
+                    ),
+                    tabindex=0,
+                ),
+                cls="table-scroll",
+            ),
+            H2("The method behind the measurement"),
+            P(
+                "nominal.benchmark loads the dictionaries once, generates each complete contact, serializes every field, and folds it into a running MD5 checksum. SQL time includes generation, serialization and hashing; it excludes network and HTML rendering. Client time includes the complete round trip."
+            ),
+            P(
+                "Combined throughput is total contacts divided by total SQL seconds. Runs are sequential on a shared VPS. These are measurements, not a performance guarantee."
+            ),
+            P(
+                Strong("Host: "),
+                results["environment"],
+                Br(),
+                Strong("Database: "),
+                results["runs"][0]["server"],
+                Br(),
+                Strong("Measured: "),
+                results["measured_at"],
+            ),
+            A("Raw results & checksums ↗", href="/api/benchmark"),
+            H2("Why not just count a million rows?"),
+            P(
+                "Counting a series measures the series generator. Here, each contact includes name variation, Markov street names, a formatted address, fictional phone and email, area-uniform coordinates, normal physical attributes and eye color."
+            ),
+            cls="doc-body",
+        ),
+        id="main",
+        cls="docs benchmark",
+    )
+
+
+def api_reference():
+    return Main(
+        Section(
+            eyebrow("HTTP REFERENCE", "INTERFACE"),
+            H1("A little structure.", Br(), Em("A world of data.")),
+            P(
+                "Read-only endpoints. Generated exclusively by the SQL library.",
+                cls="lede",
+            ),
+            cls="doc-hero",
+        ),
+        Div(
+            H2("Generate a batch"),
+            Pre(
+                Code("GET /api/contacts?locale=en_US&seed=42&page=0&size=10"),
+                tabindex=0,
+            ),
+            P(
+                "locale: en_US or de_DE. seed: up to 64 characters. page: zero-based, 0–100,000,000. size: 10, 25 or 50. Returns a JSON batch with contacts, positions, library version and measured round-trip time. Invalid inputs return HTTP 422; temporary generation failures return 503."
+            ),
+            A(
+                "Open example JSON ↗",
+                href="/api/contacts?locale=en_US&seed=42&page=0&size=10",
+            ),
+            H2("Export the same batch"),
+            Pre(
+                Code("GET /download?locale=de_DE&seed=42&page=0&size=10&format=csv"),
+                tabindex=0,
+            ),
+            P(
+                "Use format=csv or format=json. Parameters identify exactly the same positions as the generator; exports regenerate those positions in SQL."
+            ),
+            H2("Measured performance"),
+            A("GET /api/benchmark ↗", href="/api/benchmark"),
+            H2("SQL procedure reference"),
+            A("Read signatures, algorithms and examples ↗", href="/library"),
+            cls="doc-body",
+        ),
+        id="main",
+        cls="docs",
+    )
+
+
+def render_error(message):
+    return str(to_xml(P(message, cls="error-message")))

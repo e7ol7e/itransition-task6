@@ -6,7 +6,6 @@ A Python web application backed by a small Faker-style **PostgreSQL stored-proce
 - **Procedure documentation:** https://task6.evgeniy.win/library
 - **Measured benchmark:** https://task6.evgeniy.win/benchmark
 - **Silent demonstration:** https://task6.evgeniy.win/submission/demo.mp4
-- **Author:** Evgeniy Bebeshko
 
 Measured result: **365.19 complete users/second** across 600,000 contacts, with three 100,000-contact trials per locale. US English: 409.79/s; German: 329.34/s. Includes SQL generation, JSON serialization, and checksumming; excludes network and rendering. [Raw results](artifacts/benchmark.json).
 
@@ -18,13 +17,13 @@ Measured result: **365.19 complete users/second** across 600,000 contacts, with 
 - SQL-trained order-2 character Markov chain for invented street names.
 - Area-uniform sphere coordinates; interactive globe, independent of postal addresses.
 - Box–Muller normal physical attributes with rejection bounds; discrete localized eye colors.
-- Server-rendered Python/Jinja interface, contact details, CSV/JSON exports, responsive layouts.
+- Server-rendered FastHTML interface, HTMX 4 fragments, contact dossiers, CSV/JSON exports, responsive layouts, and persistent dark/light themes.
 - Separate read-only app role, SQL-bound parameters, bounded requests, no runtime Faker dependency.
 
 ## Architecture
 
 ```text
-Browser → FastAPI → CALL nominal.batch(locale, seed, batch, size, NULL)
+Browser → FastHTML → CALL nominal.batch(locale, seed, batch, size, NULL)
                        └─ contact
                            ├─ full_name → choose → integer → uniform
                            ├─ address → word (Markov) + choose + integer
@@ -77,6 +76,7 @@ Set `DATABASE_URL` for the application role and `ADMIN_URL` for an administrativ
 
 ```sh
 uv run python -m unittest -v test_library
+uv run python -m unittest -v test_web
 uv run python verify_browser.py
 uv run python verify_install.py
 ```
@@ -105,10 +105,25 @@ Generated addresses are not validated delivery destinations. Coordinates are glo
 | `data/*.csv` | Locale-keyed static dictionaries and city anchors |
 | `build_lookups.py` | Reproducible static-dictionary extraction; development only |
 | `admin.py` | Transactional installation and measured SQL benchmark |
-| `app.py` | Procedure calls, HTML rendering, exports and docs |
-| `templates/`, `static/` | Interface, globe projection and styles |
+| `app.py` | FastHTML routes, validated inputs, responses and HTTP reference |
+| `services.py` | Read-only SQL boundary and CSV/JSON exports |
+| `views.py` | FastHTML page and fragment components, including dossiers |
+| `static/js/` | Separate browser adapters: theme, dialog/clipboard, canvas globe |
+| `static/style.css` | Responsive charcoal/coral dark theme and paper light theme |
+| `static/vendor/` | Self-hosted, version-pinned HTMX and its license |
+| `ARCHITECTURE.md` | Rendering, request lifecycle, JavaScript ownership and versions |
 | `LIBRARY.md` | Stored-procedure reference, published at `/library` |
 | `test_library.py`, `verify_browser.py` | Real database and live browser checks |
 | `compose.yaml`, `Dockerfile` | Isolated production deployment |
 
-Name dictionaries retain their original [Faker MIT license](data/LICENSE-Faker.txt). Fonts: DM Sans, Manrope, IBM Plex Mono, loaded from Google Fonts with system fallbacks.
+Name dictionaries retain their original [Faker MIT license](data/LICENSE-Faker.txt). Fonts: DM Sans, Libre Caslon Display, IBM Plex Mono, self-hosted with their SIL Open Font Licenses and system fallbacks.
+
+## Web interface
+
+The interface uses **FastHTML 0.14.15** and self-hosted **HTMX 4.0.0**. Python dependencies are locked with uv; HTMX is vendored at its exact version.
+
+Python renders pages, contact tables and dossiers. HTMX updates HTML fragments; separate JavaScript files handle browser interactions and the globe. Forms, pagination and standalone dossiers also work without JavaScript. See [ARCHITECTURE.md](ARCHITECTURE.md).
+
+Dark mode is the default. The header switch selects light mode and saves the preference locally across pages. Fonts are self-hosted, and visible interface text is at least 12px.
+
+Run `uv run python verify_accessibility.py` to audit both themes at mobile and desktop widths using a pinned, integrity-checked axe development tool. Results are stored in `artifacts/accessibility.json`. Automated checks supplement manual keyboard and visual review.

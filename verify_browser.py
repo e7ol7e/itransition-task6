@@ -3,6 +3,7 @@
 import csv
 import io
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -10,7 +11,7 @@ import httpx
 from playwright.sync_api import expect, sync_playwright
 
 sys.stdout.reconfigure(encoding="utf8")
-URL = "https://task6.evgeniy.win"
+URL = os.environ.get("TASK6_URL", "https://task6.evgeniy.win")
 ROOT = Path(__file__).resolve().parent
 
 
@@ -45,8 +46,23 @@ def main():
         )
         page = context.new_page()
         errors = []
+        requests = []
         page.on("pageerror", lambda e: errors.append(str(e)))
+        page.on("request", lambda r: requests.append(r.url))
         page.goto(URL, wait_until="networkidle")
+        # A theme preference must survive navigation and reloads.
+        expect(page.locator("html")).to_have_attribute("data-theme", "dark")
+        page.locator("#theme-toggle").click()
+        expect(page.locator("html")).to_have_attribute("data-theme", "light")
+        page.reload(wait_until="networkidle")
+        expect(page.locator("html")).to_have_attribute("data-theme", "light")
+        page.goto(URL + "/library", wait_until="networkidle")
+        expect(page.locator("html")).to_have_attribute("data-theme", "light")
+        page.locator("#theme-toggle").click()
+        page.goto(URL, wait_until="networkidle")
+        expect(page.locator("html")).to_have_attribute("data-theme", "dark")
+        assert page.evaluate("htmx.version") == "4.0.0"
+        checks.append("Dark/light theme persists across reload and pages; HTMX 4.0.0")
         expect(page.locator("[data-index]")).to_have_count(10)
         expect(page.locator('[data-index="0"]')).to_contain_text("Dr. Melissa Goodwin")
         first = page.locator('[data-index="0"]').inner_text()
@@ -58,7 +74,7 @@ def main():
         checks.append("Next / previous restores exact contacts")
         page.locator("#locale").select_option("de_DE")
         expect(page.locator('[data-index="0"]')).to_contain_text("Harro Holt")
-        page.locator('[data-index="0"]').click()
+        page.locator('[data-index="0"] .person-name').click()
         expect(page.locator("#detail")).to_be_visible()
         expect(page.locator("#detail")).to_contain_text("Frankfurt am Main")
         expect(page.locator("#detail")).to_contain_text("LATITUDE")
@@ -75,12 +91,11 @@ def main():
         expect(page.locator("[data-index]")).to_have_count(10)
         page.locator("#seed").fill('a " & <script>window.PWNED=1</script>')
         page.locator("#generate").click()
-        expect(page.locator(".detail-foot")).to_have_count(1)
         page.wait_for_function(
             "document.querySelector('#batch-data').textContent.includes('PWNED')"
         )
         assert page.evaluate("window.PWNED") is None
-        page.locator('[data-index="0"]').click()
+        page.locator('[data-index="0"] .person-name').click()
         expect(page.locator("#detail")).to_contain_text("<script>")
         assert page.evaluate("window.PWNED") is None
         page.keyboard.press("Escape")
@@ -88,16 +103,26 @@ def main():
         page.locator("#seed").fill("42")
         page.locator("#locale").select_option("en_US")
         expect(page.locator('[data-index="0"]')).to_contain_text("Dr. Melissa Goodwin")
+        # Rapid changes must leave the newest request authoritative.
+        page.evaluate("""() => {
+            const select = document.querySelector('#locale');
+            select.value = 'de_DE'; select.dispatchEvent(new Event('change', {bubbles:true}));
+            select.value = 'en_US'; select.dispatchEvent(new Event('change', {bubbles:true}));
+        }""")
+        page.wait_for_function("!document.body.classList.contains('loading')")
+        expect(page.locator('[data-index="0"]')).to_contain_text("Dr. Melissa Goodwin")
+        expect(page.locator("#error")).to_be_empty()
+        checks.append("Rapid locale changes retain newest state without an abort error")
         # Error feedback must preserve the last good batch and unlock controls.
         page.route("**/fragment?*", lambda route: route.abort())
         page.locator("#generate").click()
-        expect(page.locator("#error")).to_be_visible()
+        expect(page.locator("#error")).to_contain_text("could not be completed")
         expect(page.locator("#generate")).to_be_enabled()
         assert page.locator("[data-index]").count() == 10
         page.unroute("**/fragment?*")
         checks.append("Network failure feedback and recovery")
         page.locator("#generate").click()
-        expect(page.locator("#error")).not_to_be_visible()
+        expect(page.locator("#error")).to_be_empty()
         page.wait_for_function("!document.body.classList.contains('loading')")
         page.screenshot(
             path=str(ROOT / "artifacts/desktop-screenshot.png"), full_page=True
@@ -108,7 +133,7 @@ def main():
                 width
             )
         page.set_viewport_size({"width": 390, "height": 844})
-        page.locator('[data-index="0"]').click()
+        page.locator('[data-index="0"] .person-name').click()
         expect(page.locator("#detail")).to_be_visible()
         assert page.locator("#detail").bounding_box()["width"] < 390
         page.keyboard.press("Escape")
@@ -122,7 +147,38 @@ def main():
         page.goto(URL + "/benchmark")
         expect(page.locator("h1")).to_contain_text("How fast")
         assert not errors, errors
-        checks.append("Documentation, benchmark route and no JavaScript errors")
+        for route in ("/library", "/benchmark", "/api/docs"):
+            page.goto(URL + route, wait_until="networkidle")
+            for width in (390, 768, 1440):
+                page.set_viewport_size({"width": width, "height": 900})
+                assert page.evaluate(
+                    "document.documentElement.scrollWidth<=innerWidth"
+                ), (route, width)
+        checks.append(
+            "Documentation, benchmark, HTTP reference responsive in all sizes"
+        )
+        checks.append("No JavaScript errors")
+        assert all(url.startswith(URL) for url in requests), [
+            url for url in requests if not url.startswith(URL)
+        ]
+        checks.append(
+            "All scripts, styles and fonts are self-hosted; no external requests"
+        )
+        # The enhanced interface must still work as ordinary server-rendered HTML.
+        fallback = browser.new_context(java_script_enabled=False)
+        plain = fallback.new_page()
+        plain.goto(URL, wait_until="networkidle")
+        plain.locator("#locale").select_option("de_DE")
+        plain.locator("#generate").click()
+        expect(plain.locator('[data-index="0"]')).to_contain_text("Harro Holt")
+        plain.locator("#next").click()
+        expect(plain.locator('[data-index="0"] .position')).to_have_text("0011")
+        plain.locator('[data-index="0"] .person-name').click()
+        expect(plain.locator("#main #detail-title")).to_be_visible()
+        checks.append(
+            "Forms, pagination and standalone dossiers work without JavaScript"
+        )
+        fallback.close()
         browser.close()
     (ROOT / "artifacts/browser-checks.json").write_text(
         json.dumps({"passed": len(checks), "checks": checks}, indent=2) + "\n"

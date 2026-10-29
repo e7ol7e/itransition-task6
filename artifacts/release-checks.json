@@ -1,6 +1,6 @@
 {
-  "checked_at": "2026-10-29T01:22:25.616961+00:00",
-  "passed": 9,
+  "checked_at": "2026-10-29T10:47:49.263365+00:00",
+  "passed": 12,
   "checks": [
     {
       "url": "https://task6.evgeniy.win/",
@@ -15,6 +15,14 @@
       "status": 200
     },
     {
+      "url": "https://task6.evgeniy.win/api/docs",
+      "status": 200
+    },
+    {
+      "url": "https://task6.evgeniy.win/healthz",
+      "status": 200
+    },
+    {
       "url": "https://task6.evgeniy.win/api/benchmark",
       "status": 200
     },
@@ -23,10 +31,19 @@
       "status": 200
     },
     {
+      "check": "Public versioned asset hashes match served bytes",
+      "passed": true
+    },
+    {
+      "check": "Stored benchmark reconciles across all six runs",
+      "passed": true
+    },
+    {
       "url": "https://task6.evgeniy.win/submission/demo.mp4",
       "status": 200,
       "range_status": 206,
-      "sha256_verified": true
+      "sha256_verified": true,
+      "edition": "FastHTML 0.14.15 / HTMX 4.0.0; dark and light themes; actual Chrome window"
     },
     {
       "url": "https://task4.evgeniy.win/",
@@ -35,10 +52,25 @@
     {
       "url": "https://task5.evgeniy.win/",
       "status": 200
-    },
-    {
-      "url": "https://github.com/e7ol7e/itransition-task6",
-      "status": 200
     }
-  ]
+  ],
+  "verification": {
+    "sql_integration": {
+      "passed": 11,
+      "total": 11
+    },
+    "fasthtml_contracts": {
+      "passed": 7,
+      "total": 7
+    },
+    "live_browser": {
+      "passed": 15,
+      "total": 15
+    },
+    "automated_accessibility": {
+      "passed": 16,
+      "total": 16
+    },
+    "fresh_install_reproduces_both_locales": true
+  }
 }

@@ -1,15 +1,20 @@
 {
-  "passed": 10,
+  "passed": 15,
   "checks": [
     "HTTP reproducibility",
     "HTTP input bounds",
     "CSV and JSON equal displayed batch",
+    "Dark/light theme persists across reload and pages; HTMX 4.0.0",
     "Next / previous restores exact contacts",
     "German locale and full contact dialog",
     "Direct navigation to millionth contact",
     "Arbitrary seed is escaped in HTML and JSON",
+    "Rapid locale changes retain newest state without an abort error",
     "Network failure feedback and recovery",
     "390 / 768 / 1440px responsive layouts and mobile dialog",
-    "Documentation, benchmark route and no JavaScript errors"
+    "Documentation, benchmark, HTTP reference responsive in all sizes",
+    "No JavaScript errors",
+    "All scripts, styles and fonts are self-hosted; no external requests",
+    "Forms, pagination and standalone dossiers work without JavaScript"
   ]
 }
