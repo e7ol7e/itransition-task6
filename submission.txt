@@ -7,7 +7,7 @@ Stored-procedure library documentation:
 https://task6.evgeniy.win/library
 
 Video demonstration (real application, no subtitles or audio):
-https://task6.evgeniy.win/submission/demo.mp4
+https://task6.evgeniy.win/submission/demo-20261029.mp4
 
 Benchmark:
 365.19 complete users/second overall.

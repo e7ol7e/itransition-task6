@@ -314,6 +314,11 @@ def main():
         try:
             page.goto(URL, wait_until="networkidle")
             page.bring_to_front()
+            window = context.new_cdp_session(page)
+            window_id = window.send('Browser.getWindowForTarget')['windowId']
+            window.send('Browser.setWindowBounds', {'windowId':window_id, 'bounds':{'windowState':'fullscreen'}})
+            page.wait_for_function('Math.abs(innerHeight-screen.height)<=2 && Math.abs(innerWidth-screen.width)<=2')
+            window.detach()
             hold(3)
             recorder.start()
             hold(5)

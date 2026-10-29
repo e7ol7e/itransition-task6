@@ -5,7 +5,7 @@ A Python web application backed by a small Faker-style **PostgreSQL stored-proce
 - **Application:** https://task6.evgeniy.win/
 - **Procedure documentation:** https://task6.evgeniy.win/library
 - **Measured benchmark:** https://task6.evgeniy.win/benchmark
-- **Silent demonstration:** https://task6.evgeniy.win/submission/demo.mp4
+- **Silent demonstration:** https://task6.evgeniy.win/submission/demo-20261029.mp4
 
 Measured result: **365.19 complete users/second** across 600,000 contacts, with three 100,000-contact trials per locale. US English: 409.79/s; German: 329.34/s. Includes SQL generation, JSON serialization, and checksumming; excludes network and rendering. [Raw results](artifacts/benchmark.json).
 
