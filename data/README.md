@@ -1,0 +1,1 @@
+Names: static dictionary constants from Faker 40.44.0 (MIT; license included). No Faker contact-generation functions are used. Street corpora and city anchors are curated here. Postal ranges are illustrative, not deliverability validation. Germany uses five metropolitan anchors with official fictional telephone blocks. The database trains its Markov model from terms.csv.

@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.env
+.env
+video/
+artifacts/*.mp4
+artifacts/*screenshot*
+.pytest_cache/
+deployment.tar.gz

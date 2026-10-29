@@ -1,0 +1,15 @@
+{
+  "passed": 10,
+  "checks": [
+    "HTTP reproducibility",
+    "HTTP input bounds",
+    "CSV and JSON equal displayed batch",
+    "Next / previous restores exact contacts",
+    "German locale and full contact dialog",
+    "Direct navigation to millionth contact",
+    "Arbitrary seed is escaped in HTML and JSON",
+    "Network failure feedback and recovery",
+    "390 / 768 / 1440px responsive layouts and mobile dialog",
+    "Documentation, benchmark route and no JavaScript errors"
+  ]
+}

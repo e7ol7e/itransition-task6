@@ -1,0 +1,9 @@
+.venv
+.git
+video
+*.env
+__pycache__
+data
+sql
+tests*
+deployment.tar.gz
