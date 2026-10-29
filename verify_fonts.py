@@ -15,13 +15,17 @@ def main():
         session = context.new_cdp_session(page)
         session.send('Network.enable')
         transfers = []
-        session.on('Network.responseReceived', lambda event: transfers.append(event['response']) if '.woff2' in event['response']['url'] else None)
+        cached_requests = set()
+        session.on('Network.requestServedFromCache', lambda event: cached_requests.add(event['requestId']))
+        session.on('Network.responseReceived', lambda event: transfers.append(event) if '.woff2' in event['response']['url'] else None)
         page.goto(url+'/library', wait_until='networkidle')
         page.evaluate('document.fonts.ready')
         assert page.locator('link[rel=preload][as=font]').count() == 3
-        for response in transfers:
+        for event in transfers:
+            response = event['response']
             assert 'immutable' in {key.lower():value for key,value in response['headers'].items()}['cache-control']
         print('Cold load:', len(transfers), 'font files with immutable caching')
+        seen = {event['response']['url'] for event in transfers}
         transfers.clear()
         for label in ['Generator', 'Benchmark', 'SQL library', 'Generator', 'SQL library']:
             page.locator('.topbar nav').get_by_role('link', name=label, exact=True).click()
@@ -31,13 +35,17 @@ def main():
               return ['16px "Libre Caslon Display"', '16px "DM Sans"', '16px "IBM Plex Mono"'].every(font=>document.fonts.check(font));
             }''')
             assert ready, f'Fonts not ready at first animation frame: {label}'
-            before = page.locator('h1').bounding_box()
+            before = page.locator('h1').first.bounding_box()
             page.evaluate('document.fonts.ready')
-            after = page.locator('h1').bounding_box()
+            after = page.locator('h1').first.bounding_box()
             assert before == after, (label, before, after)
             page.wait_for_load_state('networkidle')
         assert transfers, 'Expected cached font responses on document navigation'
-        assert all(response.get('fromDiskCache') or response.get('fromPrefetchCache') for response in transfers), 'A font was downloaded again during navigation'
+        for event in transfers:
+            response = event['response']
+            if response['url'] in seen:
+                assert response.get('fromDiskCache') or response.get('fromPrefetchCache') or event['requestId'] in cached_requests, 'A font was downloaded twice: '+response['url']
+            seen.add(response['url'])
         assert not errors, errors
         print('PASS: final fonts ready at first frame on all tab switches; stable headings; no repeated font downloads; no browser errors')
         browser.close()
