@@ -407,7 +407,7 @@ def main():
                         result = client.get(URL + "api/benchmark").json()
                     recorder.client.send("ResumeRecord")
                     print("CAPTURE RESUMED: full benchmark available", flush=True)
-            page.get_by_role("link", name="Benchmark", exact=True).click()
+            page.locator('nav a[href="/benchmark"]').click()
             page.wait_for_load_state("networkidle")
             hold(9)
             page.locator(".doc-body h2").first.evaluate(

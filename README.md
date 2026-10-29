@@ -76,12 +76,14 @@ Set `DATABASE_URL` for the application role and `ADMIN_URL` for an administrativ
 ```sh
 uv run python -m unittest -v test_library
 uv run python verify_browser.py
+uv run python verify_install.py
 ```
 
 - Database integration checks: fixed golden record, deterministic interleaved requests and separate connections, cross-size position stability, Unicode/quoted seeds, procedure types and dictionaries, 2,000 complete contacts, fictional channel ranges, invalid inputs, role permissions, millionth position, full-range integer sampling, and 20,000-draw distribution checks.
 - Sphere tests use equal-area bins in `sin(latitude)`, Cartesian means, and polar-cap probability. They deliberately do not test for uniform latitude.
 - Browser checks use installed Chrome via Playwright: locale changes, pagination, millionth contact, detail dialog, exports, seed escaping, network failure recovery, mobile layouts, documentation, and JavaScript errors.
 - Measured statistics and browser checks are checked in under `artifacts/`.
+- Fresh-install verification creates a uniquely named temporary database, loads the shipped SQL and UTF-8 CSVs, retrains the Markov model in SQL, and compares both locale batches against the live snapshot. Its temporary database is removed afterward. This check needs an administrative connection with CREATE DATABASE access.
 
 For a local Windows server, put a local `DATABASE_URL` in `.env`, then `uv run python run_local.py`. It selects an event loop compatible with Psycopg's async connection pool on Windows. On Linux: `uv run uvicorn app:app --port 8066`.
 

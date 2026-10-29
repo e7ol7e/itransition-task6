@@ -1,0 +1,74 @@
+{
+  "measured_at": "2026-10-29T01:16:17.896157+00:00",
+  "environment": "CPU: AMD EPYC Processor (with IBPB) \u00b7 vCPUs: 4 \u00b7 shared VPS \u00b7 database memory limit 384 MiB \u00b7 PostgreSQL 18 Alpine container",
+  "total_contacts": 600000,
+  "overall_users_per_second": 365.18807587918985,
+  "runs": [
+    {
+      "count": 100000,
+      "locale": "en_US",
+      "server": "PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "seconds": 242.483393,
+      "checksum": "f08f728966f009b6a1d3cf9b20ea5024",
+      "finished_at": "2026-10-29T00:52:55.93449+00:00",
+      "users_per_second": 412.3993761502669,
+      "trial": 1,
+      "client_seconds": 242.68270900310017
+    },
+    {
+      "count": 100000,
+      "locale": "en_US",
+      "server": "PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "seconds": 243.872314,
+      "checksum": "740d85009b6892b50372dbb618796398",
+      "finished_at": "2026-10-29T00:57:00.010614+00:00",
+      "users_per_second": 410.05064642147124,
+      "trial": 2,
+      "client_seconds": 244.07009813701734
+    },
+    {
+      "count": 100000,
+      "locale": "en_US",
+      "server": "PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "seconds": 245.726885,
+      "checksum": "f0480e3f772c04284a21b226a518922c",
+      "finished_at": "2026-10-29T01:01:06.191782+00:00",
+      "users_per_second": 406.9558770502462,
+      "trial": 3,
+      "client_seconds": 246.07332388998475
+    },
+    {
+      "count": 100000,
+      "locale": "de_DE",
+      "server": "PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "seconds": 302.544336,
+      "checksum": "2c99c14224562a341c7f9596aebe1f90",
+      "finished_at": "2026-10-29T01:06:09.07099+00:00",
+      "users_per_second": 330.5300681616462,
+      "trial": 1,
+      "client_seconds": 302.8699833509745
+    },
+    {
+      "count": 100000,
+      "locale": "de_DE",
+      "server": "PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "seconds": 308.809253,
+      "checksum": "b96eea2ce3b5667e23de60bb949c6a9d",
+      "finished_at": "2026-10-29T01:11:18.101037+00:00",
+      "users_per_second": 323.8244936915799,
+      "trial": 2,
+      "client_seconds": 309.0078452519374
+    },
+    {
+      "count": 100000,
+      "locale": "de_DE",
+      "server": "PostgreSQL 18.6 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "seconds": 299.552842,
+      "checksum": "c380b3edd2b67ed71f247f0fc0df0692",
+      "finished_at": "2026-10-29T01:16:17.86334+00:00",
+      "users_per_second": 333.83091721760394,
+      "trial": 3,
+      "client_seconds": 299.7578636769904
+    }
+  ]
+}

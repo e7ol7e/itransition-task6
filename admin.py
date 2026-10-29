@@ -32,6 +32,7 @@ def sql(query, timeout=3600):
         ],
         input=query,
         text=True,
+        encoding="utf-8",
         capture_output=True,
         cwd=ROOT,
         timeout=timeout,
@@ -56,11 +57,11 @@ def install():
         for line in (ROOT / ".env").read_text().splitlines()
         if "=" in line
     )
-    query = "begin;\n" + (ROOT / "sql/001_library.sql").read_text()
+    query = "begin;\n" + (ROOT / "sql/001_library.sql").read_text(encoding="utf-8")
     for table in ("names", "terms", "cities"):
         query += (
             f"\ncopy nominal.{table} from stdin with (format csv);\n"
-            + (ROOT / "data" / f"{table}.csv").read_text()
+            + (ROOT / "data" / f"{table}.csv").read_text(encoding="utf-8")
             + "\\.\n"
         )
     query += "\ncall nominal.rebuild_locale('en_US'); call nominal.rebuild_locale('de_DE');\n"
