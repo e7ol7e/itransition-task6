@@ -2,6 +2,7 @@
 
 import json
 import os
+import platform
 import secrets
 import time
 from pathlib import Path
@@ -48,6 +49,7 @@ def main():
             admin.execute(sql.SQL("drop database {}").format(sql.Identifier(name)))
     result = {
         "passed": True,
+        "python_version": platform.python_version(),
         "check": "Fresh SQL schema, CSV COPY and SQL Markov training reproduce live 25-contact batches for both locales",
         "temporary_database_removed": True,
         "elapsed_seconds": round(time.perf_counter() - started, 3),
