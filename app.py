@@ -1,6 +1,7 @@
 """FastHTML routes: Python owns data, validation and rendered fragments."""
 
 import json
+import re
 import secrets
 from pathlib import Path
 
@@ -21,7 +22,15 @@ ROOT = Path(__file__).resolve().parent
 class ResponsePolicy(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
-        response.headers["Cache-Control"] = "no-store, no-transform"
+        versioned_asset = request.url.path.startswith('/static/') and re.fullmatch(
+            r'[a-f0-9]{12}', request.query_params.get('v', '')
+        )
+        fingerprinted_font = re.fullmatch(r'/static/fonts/[a-f0-9]{12}\.woff2', request.url.path)
+        response.headers["Cache-Control"] = (
+            "public, max-age=31536000, immutable, no-transform"
+            if response.status_code in {200, 304} and (versioned_asset or fingerprinted_font)
+            else "no-store, no-transform"
+        )
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         return response
@@ -64,6 +73,11 @@ app = FastHTML(
             ),
         ),
         Link(rel="icon", href="/static/favicon.svg", type="image/svg+xml"),
+        # Match the URLs in fonts.css so preloads and font use share one request.
+        *[Link(rel="preload", href=f"/static/fonts/{name}.woff2",
+               type="font/woff2", crossorigin="anonymous", **{"as": "font"})
+          for name in ("a43e6d862c68", "713ca32c3c8b", "7e3d7e3c7de8")],
+        Link(rel="stylesheet", href=views.asset("fonts/fonts.css")),
         Script(src=views.asset("js/theme.js")),
         Link(rel="stylesheet", href=views.asset("style.css")),
         Script(src=views.asset("vendor/htmx-4.0.0.min.js"), defer=True),

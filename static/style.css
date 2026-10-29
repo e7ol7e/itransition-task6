@@ -1,4 +1,3 @@
-@import url('/static/fonts/fonts.css?v=0fdfd49d774d');
 
 :root{color-scheme:dark;--bg:#191a18;--surface:#1f201e;--raised:#242522;--text:#f0eee7;--muted:#aaa99e;--dim:#96988b;--line:#3a3c34;--accent:#ee624f;--accent-ink:#191a18;--accent-soft:#ef66501a;--globe-fill:#20231f;--globe-grid:#515846;--serif:'Libre Caslon Display',Georgia,serif;--sans:'DM Sans',Arial,sans-serif;--mono:'IBM Plex Mono',monospace}
 :root[data-theme=light]{color-scheme:light;--bg:#f5f2e9;--surface:#faf8f2;--raised:#ece9df;--text:#252820;--muted:#626656;--dim:#606657;--line:#d6d5c8;--accent:#ba3f2d;--accent-ink:#fff5eb;--accent-soft:#ba3f2d0c;--globe-fill:#e6e8dc;--globe-grid:#a8b29a}

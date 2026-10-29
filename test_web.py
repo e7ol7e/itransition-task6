@@ -147,6 +147,28 @@ class WebTests(unittest.TestCase):
         result = self.client.get("/api/benchmark").json()
         self.assertEqual(result["total_contacts"], 600000)
 
+    def test_fonts_load_early_and_cache_without_caching_dynamic_pages(self):
+        response = self.client.get('/library')
+        soup = BeautifulSoup(response.text, 'html.parser')
+        preloads = soup.select('link[rel=preload][as=font]')
+        self.assertEqual(len(preloads), 3)
+        css = soup.select('link[rel=stylesheet]')
+        self.assertIn('/fonts/fonts.css?v=', css[0]['href'])
+        self.assertIn('/style.css?v=', css[1]['href'])
+        font_css = self.client.get(css[0]['href'])
+        self.assertIn('immutable', font_css.headers['cache-control'])
+        self.assertNotIn('font-display: swap', font_css.text)
+        self.assertNotIn('@import', self.client.get(css[1]['href']).text)
+        for preload in preloads:
+            self.assertEqual(preload['crossorigin'], 'anonymous')
+            self.assertIn(preload['href'], font_css.text)
+            font = self.client.get(preload['href'])
+            self.assertEqual(font.status_code, 200)
+            self.assertIn('immutable', font.headers['cache-control'])
+        self.assertIn('no-store', response.headers['cache-control'])
+        self.assertIn('no-store', self.client.get('/api/benchmark').headers['cache-control'])
+        self.assertIn('no-store', self.client.get('/static/fonts/000000000000.woff2').headers['cache-control'])
+
 
 if __name__ == "__main__":
     unittest.main()
